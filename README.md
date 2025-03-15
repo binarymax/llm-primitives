@@ -39,6 +39,7 @@ With the class, then use the methods like the examples below.  Each will return 
 
 ```javascript
 const answer = await llm.bool("On a clear day, the sky is blue.");
+//answer == true
 ```
 
 ### enum
@@ -46,25 +47,41 @@ const answer = await llm.bool("On a clear day, the sky is blue.");
 ```javascript
 const options = ["blue","green","red"]
 const answer = await llm.enum("On a clear day, the sky is the following color.",options);
+//answer == 'blue'
 ```
 
 ### int
 
 ```javascript
 const answer = await llm.int("What is 2+2?");
+//answer == 4
 ```
 
 ### float
 
 ```javascript
 const answer = await llm.float("What is Pi to the 5th decimal place?");
+//answer==3.14159
+```
+
+### date
+
+```javascript
+const answer = await llm.date("When did Niel Armstrong walk on the moon?");
+//answer==1969-07-20T00:00:00.000Z
 ```
 
 ### string
 
 ```javascript
-const answer = await llm.string("In markdown, write a bulleted list of the four bending elements from 
+const answer = await llm.string("In markdown, write a bulleted list of the four bending elements from Avatar: The Last Airbender.");
+/*answer == `Sure! Here’s a bulleted list of the four bending elements from *Avatar: The Last Airbender*:
+
+- Water
+- Earth
+- Fire
+- Air`
+*/
 ```
 
-
-__Made with ❤️ by (Max Irwin)[https://max.io]__
+__Made with ❤️ by (Max Irwin)[https://max.io] __

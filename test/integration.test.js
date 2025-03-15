@@ -45,6 +45,12 @@ describe("Test primitive values, without cache", function () {
     assert.equal(answer, 3.14159);
   });
 
+  it("Should test date", async function () {    
+    const answer = await llm.date("When did Niel Armstrong walk on the moon?");
+    const expect = new Date('1969-07-20');
+    assert.equal(answer.getTime(),expect.getTime());
+  });
+
   it("Should test string", async function () {    
     const answer = await llm.string("In markdown, write a bulleted list of the four bending elements from Avatar: The Last Airbender.");
     const e = answer.toLowerCase().indexOf('earth')>0;

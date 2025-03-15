@@ -356,7 +356,8 @@ class LLM {
   async date(content,date,temperature) {
     const schema = date_schema(date||null);
     const {response} = await this._completion(content,schema,temperature);
-    return extractStructuredResponse(response,"answer");
+    const answer = extractStructuredResponse(response,"answer");
+    return new Date(answer);
   }
 
   // Just a plain string completion, with an optional maximum token length
