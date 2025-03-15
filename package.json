@@ -1,0 +1,37 @@
+{
+  "name": "llm-primitives",
+  "version": "1.0.0",
+  "description": "Basic software building blocks using LLMs",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "mocha --timeout 100000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/binarymax/llm-primitives.git"
+  },
+  "keywords": [
+    "LLM",
+    "OpenAI",
+    "GPT",
+    "function calling",
+    "tools",
+    "structured output"
+  ],
+  "author": "Max Irwin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/binarymax/llm-primitives/issues"
+  },
+  "homepage": "https://github.com/binarymax/llm-primitives#readme",
+  "dependencies": {
+    "openai": "^4.87.3",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "chai": "^5.2.0",
+    "dotenv": "^16.4.7",
+    "mocha": "^11.1.0"
+  }
+}
