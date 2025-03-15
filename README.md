@@ -4,13 +4,13 @@ Basic software building blocks using LLMs.
 
 Use LLMs to get things like Boolean, Enum selection, Int, Float, and Date responses.  And of course strings.
 
-It also includes built in caching, cost breakdowns grouped by arbitrary identifiers, streaming, and regular completions.
+It also includes built in streaming, caching, and cost breakdowns grouped by arbitrary identifiers.
 
 ## Why does this exist?
 
 Because when developing things like "agents" or when LLMs are part of complex workflows, sometimes we need the basics.  The most useful operation tend to be booleans and enum choice selection for branching logic, the others exist because they are also occasionally useful.
 
-I have been using and evolving this library internally since 2023 in production, and decided to open source it.
+I have been using and evolving this library successfully since 2023 in production, and decided to open source it.  The original used Postgres for caching, this uses SQLite
 
 _Note: This only works with OpenAI right now, and you need an API Key._
 
@@ -33,7 +33,7 @@ const llm = new LLM({
 });
 ```
 
-With the class, then use the methods like the examples below.  Each will return a properly casted object, or will return `null` and log an exception if there was a problem.
+With the class, you can then use the methods in the examples below.  Each will return a properly casted object, or will return `null` and log an exception if there was a problem.
 
 ### bool
 
