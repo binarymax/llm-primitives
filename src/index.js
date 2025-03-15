@@ -1,8 +1,5 @@
-console.warn("Upgrade to openai v5.0.0 when it becomes available: https://github.com/openai/openai-node/pull/402#issuecomment-2578481001")
-
 import OpenAI from 'openai';
 import completions from './completions.js';
-
 const Completions = new completions();
 
 const enum_schema = function(options) {
@@ -240,9 +237,9 @@ const extractMessage = function(response) {
 
   try {
     if (response && response.choices && response.choices.length) {
-      const responseMessage = response.choices[0].message;
-      if(responseMessage) {
-        return responseMessage;
+      const message = response.choices[0].message;
+      if(message.content) {
+        return message.content;
       }
     }
   } catch(ex) {
@@ -262,7 +259,7 @@ class LLM {
     this.model = options.model||defaultModel;
     this.system = options.system||"You are a helpful assistant.";
     this.developer = options.developer||"You are a helpful assistant.";
-    this.userid = options.userid;
+    this.userid = options.userid||"default";
     this.openai = new OpenAI({apiKey});
   }
 
@@ -298,10 +295,10 @@ class LLM {
       }
 
       //Check if we have a cached response
-      const cached = await Completions.findByPromptHash(self.model,prompt,self.siteid);
+      const cached = await Completions.findByPromptHash(self.model,prompt,self.userid);
       if(cached && cached.length && cached[0].response) {
         //Completion already generated and cached in database!
-        return cached;
+        return cached[0];
       }
 
       const start_time = Date.now();
@@ -342,14 +339,16 @@ class LLM {
   async int(content,temperature) {
     const schema = int_schema();
     const {response} = await this._completion(content,schema,temperature);
-    return extractStructuredResponse(response,"answer");
+    const answer = extractStructuredResponse(response,"answer");
+    return parseInt(answer);
   }
 
   // Provide a prompt that expects a floating point output.
   async float(content,temperature) {
     const schema = float_schema();
     const {response} = await this._completion(content,schema,temperature);
-    return extractStructuredResponse(response,"answer");
+    const answer = extractStructuredResponse(response,"answer");
+    return parseFloat(answer);
   }
 
 

@@ -13,7 +13,7 @@ const createTableSQL = `
     label       TEXT DEFAULT 'new',
     took        INTEGER,
     cost        NUMERIC,
-    siteid      TEXT,
+    userid      TEXT,
     created     DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated     DATETIME,
     isdeleted   BOOLEAN DEFAULT 0
@@ -54,7 +54,7 @@ class Completions {
   /**
    * @param {string} [dbPath='./database.sqlite'] - Path to the SQLite database file.
    */
-  constructor(dbPath = './database.sqlite') {
+  constructor(dbPath = './cache.sqlite') {
     this.dbPath = dbPath;
     this.initialized = false;
   }
@@ -77,37 +77,47 @@ class Completions {
   }
 
   /**
-   * Finds completions matching the provided prompt and siteid.
+   * Finds completions matching the provided prompt and userid.
    * @param {any} prompt - The prompt object (will be stringified).
-   * @param {string} siteid - The user identifier.
+   * @param {string} userid - The user identifier.
    * @returns {Promise<Array>} Array of matching completions.
    */
-  async findByPrompt(prompt, siteid) {
+  async findByPrompt(prompt, userid) {
     await this.init();
     const sql = `
-      SELECT id, model, prompt_hash, prompt, response, gold, label, took, cost, siteid, created, updated
+      SELECT id, model, prompt_hash, prompt, response, gold, label, took, cost, userid, created, updated
       FROM completions
-      WHERE prompt = ? AND siteid = ? AND isdeleted = 0;
+      WHERE prompt = ? AND userid = ? AND isdeleted = 0;
     `;
-    return await allAsync(this.db, sql, [prompt, siteid]);
+    const rows = await allAsync(this.db, sql, [prompt, userid]);
+    return rows.map((r)=>{
+      r.prompt = JSON.parse(r.prompt);
+      r.response = JSON.parse(r.response);
+      return r;
+    });    
   }
 
   /**
-   * Finds completions matching the provided model, computed prompt hash, and siteid.
+   * Finds completions matching the provided model, computed prompt hash, and userid.
    * @param {string} model - The model identifier.
    * @param {any} prompt - The prompt object (will be stringified and hashed).
-   * @param {string} siteid - The user identifier.
+   * @param {string} userid - The user identifier.
    * @returns {Promise<Array>} Array of matching completions.
    */
-  async findByPromptHash(model, prompt, siteid) {
+  async findByPromptHash(model, prompt, userid) {
     await this.init();
     const sql = `
-      SELECT id, model, prompt_hash, prompt, response, gold, label, took, cost, siteid, created, updated
+      SELECT id, model, prompt_hash, prompt, response, gold, label, took, cost, userid, created, updated
       FROM completions
-      WHERE model = ? AND prompt_hash = ? AND siteid = ? AND isdeleted = 0;
+      WHERE model = ? AND prompt_hash = ? AND userid = ? AND isdeleted = 0;
     `;
     const prompt_hash = getHash(prompt);
-    return await allAsync(this.db, sql, [model, prompt_hash, siteid]);
+    const rows = await allAsync(this.db, sql, [model, prompt_hash, userid]);
+    return rows.map((r)=>{
+      r.prompt = JSON.parse(r.prompt);
+      r.response = JSON.parse(r.response);
+      return r;
+    });
   }
 
   /**
@@ -117,17 +127,17 @@ class Completions {
    * @param {any} response - The response object (will be stringified if necessary).
    * @param {number} took - Execution time.
    * @param {number} cost - Associated cost.
-   * @param {string} siteid - The user identifier.
+   * @param {string} userid - The user identifier.
    * @returns {Promise<number>} The ID of the newly inserted completion.
    */
-  async create(model, prompt, response, took, cost, siteid) {
+  async create(model, prompt, response, took, cost, userid) {
     await this.init();
     const sql = `
-      INSERT INTO completions(model, prompt_hash, prompt, response, label, took, cost, siteid)
+      INSERT INTO completions(model, prompt_hash, prompt, response, label, took, cost, userid)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?);
     `;
     const prompt_hash = getHash(prompt);
-    const values = [model, prompt_hash, prompt, response, 'new', took, cost, siteid];
+    const values = [model, prompt_hash, JSON.stringify(prompt), JSON.stringify(response), 'new', took, cost, userid];
     const result = await runAsync(this.db, sql, values);
     return result.lastID;
   }
