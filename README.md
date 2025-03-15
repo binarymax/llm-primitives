@@ -84,4 +84,4 @@ const answer = await llm.string("In markdown, write a bulleted list of the four 
 */
 ```
 
-__Made with ❤️ by (Max Irwin)[https://max.io] __
+__Made with ❤️ by [Max Irwin](https://max.io)__
