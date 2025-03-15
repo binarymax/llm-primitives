@@ -38,32 +38,32 @@ With the class, then use the methods like the examples below.  Each will return 
 ### bool
 
 ```javascript
-    const answer = await llm.bool("On a clear day, the sky is blue.");
+const answer = await llm.bool("On a clear day, the sky is blue.");
 ```
 
 ### enum
 
 ```javascript
-    const options = ["blue","green","red"]
-    const answer = await llm.enum("On a clear day, the sky is the following color.",options);
+const options = ["blue","green","red"]
+const answer = await llm.enum("On a clear day, the sky is the following color.",options);
 ```
 
 ### int
 
 ```javascript
-    const answer = await llm.int("What is 2+2?");
+const answer = await llm.int("What is 2+2?");
 ```
 
 ### float
 
 ```javascript
-    const answer = await llm.float("What is Pi to the 5th decimal place?");
+const answer = await llm.float("What is Pi to the 5th decimal place?");
 ```
 
 ### string
 
 ```javascript
-    const answer = await llm.string("In markdown, write a bulleted list of the four bending elements from 
+const answer = await llm.string("In markdown, write a bulleted list of the four bending elements from 
 ```
 
 
