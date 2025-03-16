@@ -9,7 +9,7 @@ config({ path: join(__dirname, ".env") });
 
 import LLM from "../src/index.js";
 
-describe("Test primitive values, without cache", function () {
+describe("Full integration test for llm-primitives", function () {
 
   const cachefile = join(__dirname,'..','cache.sqlite');
   console.log(cachefile);
@@ -21,8 +21,29 @@ describe("Test primitive values, without cache", function () {
 
   const llm = new LLM({
     apiKey:process.env.OPENAI_API_KEY,
-    model:"gpt-4o-mini"
+    model:"gpt-4o-mini",
+    prompts:join(__dirname,"prompts")
   });
+
+  //
+  // Test rendering
+  //
+
+  it("Should test template rendering", function () {
+    const str = llm.render('prompt',{variable:"like this"});
+    assert.equal(str,`# This is a Prompt
+
+It's a pretty good prompt, too.
+
+Because it has variables: like this
+
+And includes Hello, World!`);
+
+  });
+
+  //
+  // Below this line are fresh, uncached responses from OpenAI
+  //  
 
   it("Should test bool", async function () {
     const answer = await llm.bool("On a clear day, the sky is blue.");
@@ -47,6 +68,7 @@ describe("Test primitive values, without cache", function () {
 
   it("Should test date", async function () {    
     const answer = await llm.date("When did Niel Armstrong walk on the moon?");
+    //answer==1969-07-20T00:00:00.000Z
     const expect = new Date('1969-07-20');
     assert.equal(answer.getTime(),expect.getTime());
   });
@@ -62,6 +84,28 @@ describe("Test primitive values, without cache", function () {
     assert.equal(a,true);
     assert.equal(w,true);
   });
+
+  it("Should test cached streaming function", async function () {
+    let hasReady = false;
+    let hasChunk = false;
+    let hasError = false;
+    let hasDone = false;
+    const send = function(message) {
+      if(message.ready) hasReady = true;
+      if(message.chunk) hasChunk = true;
+      if(message.error) hasError = true;
+      if(message.done) hasDone = true;
+    }
+    const completed = await llm.stream("How much wood could a woodchuck chuck if a woodchuck could chuck wood?",send);
+    assert.equal(hasReady,true);
+    assert.equal(hasChunk,true);
+    assert.equal(hasError,false);
+    assert.equal(hasDone,true);
+  }); 
+
+  //
+  // Below this line are CACHED responses!
+  //
 
   it("Should test cached bool", async function () {
     const answer = await llm.bool("On a clear day, the sky is blue.");
@@ -94,6 +138,24 @@ describe("Test primitive values, without cache", function () {
     assert.equal(f,true);
     assert.equal(a,true);
     assert.equal(w,true);
+  });
+
+  it("Should test cached streaming function", async function () {
+    let hasReady = false;
+    let hasChunk = false;
+    let hasError = false;
+    let hasDone = false;
+    const send = function(message) {
+      if(message.ready) hasReady = true;
+      if(message.chunk) hasChunk = true;
+      if(message.error) hasError = true;
+      if(message.done) hasDone = true;
+    }
+    const completed = await llm.stream("How much wood could a woodchuck chuck if a woodchuck could chuck wood?",send);
+    assert.equal(hasReady,true);
+    assert.equal(hasChunk,true);
+    assert.equal(hasError,false);
+    assert.equal(hasDone,true);
   });
 
 });

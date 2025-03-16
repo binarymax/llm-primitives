@@ -84,4 +84,58 @@ const answer = await llm.string("In markdown, write a bulleted list of the four 
 */
 ```
 
+## Streaming
+
+A handy `stream` method exists to handle all the details of calling the api, chunk processing, and caching.
+
+Simply provide the prompt, and a `send` method.  The `send` method accepts one argument: message.
+
+```javascript
+const send = (message) => console.log(message);
+llm.stream('My Amazing Prompt',send);
+// => will stream chunk-by-chunk
+```
+
+The `message` object has the following possible forms:
+
+ - `{"ready":true}` Indicates when the request is initialized, prepare to recieve chunks
+ - `{"chunk":chunk_message,"time":chunk_time};` Is an individual chunked message from the API
+ - `{"done":true,"time":took}` Indicates when the stream is complete, no further messages will be sent
+ - `{"error":error}` Indicates an error occured, no further messages will be sent
+
+## Prompt Rendering
+
+llm-primitives also includes a handy prompt rendering tool.  It's common to mix pre-written prompts with data (such as RAG), and these methods make it easy to do so.
+
+Prompts must use (EJS)[https://ejs.co/] template syntax.
+
+First, when declaring instantiating a new LLM, register a directory 'prompts' which contains your EJS template files.
+
+For example, suppose you have a directory `prompts` with two files:
+
+```
+./prompts
+├── RAG.ejs
+└── safety.ejs
+```
+
+Specify the prompts directory in your LLM instantiation options:
+
+```javascript
+const llm = new LLM({
+	apiKey:process.env.OPENAI_API_KEY,
+	model:"gpt-4o-mini",
+	prompts:join(__dirname,"prompts")
+});
+```
+
+Then, you can render a prompt just by using the name of the file, and pass in the data as the second param:
+
+```javascript
+llm.render('RAG',{"query":query,"hits":hits});
+// => the fully rendered prompt ready to be used in llm.string or llm.stream
+```
+
+
+
 __Made with ❤️ by [Max Irwin](https://max.io)__

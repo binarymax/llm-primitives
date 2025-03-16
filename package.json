@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/binarymax/llm-primitives#readme",
   "dependencies": {
+    "ejs": "^3.1.10",
     "openai": "^4.87.3",
     "sqlite3": "^5.1.7"
   },

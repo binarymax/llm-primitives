@@ -1,3 +1,6 @@
+import fs from 'fs';
+import ejs from 'ejs';
+import path from 'path';
 import OpenAI from 'openai';
 import completions from './completions.js';
 const Completions = new completions();
@@ -250,6 +253,15 @@ const extractMessage = function(response) {
   return null;
 }
 
+const template = function(filename,options) {
+  options = options || {};
+  const dir = path.dirname(filename);
+  const str = fs.readFileSync(filename,'utf-8');
+  options.views = options.views || [dir];
+  options.filename = options.filename || filename;
+  return ejs.compile(str,options);
+}
+
 //----------------------------------------
 
 class LLM {
@@ -261,6 +273,36 @@ class LLM {
     this.developer = options.developer||"You are a helpful assistant.";
     this.userid = options.userid||"default";
     this.openai = new OpenAI({apiKey});
+
+    // Register and Compile Prompt templates
+    this.prompts = options.prompts||null;
+    this.templates = {};
+    if (this.prompts) {
+      const templates = {};
+      try {
+        const files = fs.readdirSync(options.prompts);
+        files.forEach(file => {
+          const filename = path.join(options.prompts, file);
+          if (fs.statSync(filename).isFile()) {
+            const name = path.basename(file, path.extname(file)); // Remove extension
+            templates[name] = template(filename);
+          }
+        });
+        this.templates = templates;
+        console.log('Templates loaded from:', this.prompts);
+      } catch (err) {
+        console.error('Error loading templates:', err);
+      }
+    }
+  }
+
+  render(name,data) {
+    try {
+      return this.templates[name](data);
+    } catch(ex) {
+      console.error(ex);
+    }
+    return null;
   }
 
   async _completion(content,json_schema,temperature,max_completion_tokens) {
@@ -388,11 +430,13 @@ class LLM {
       }
 
       //Check if we have a cached response
-      const cached = await Completions.findByPromptHash(self.model,prompt,self.siteid);
+      const cached = await Completions.findByPromptHash(self.model,prompt,self.userid);
       if(cached && cached.length && cached[0].response) {
         //Completion already generated and cached in database!
+        send({"ready":true});
         const choices = cached[0].response.choices;
         choices.forEach(c=>send({"chunk":c.message?.content}));
+        send({"done":true,"time":cached.took});
         return;
       }
 
