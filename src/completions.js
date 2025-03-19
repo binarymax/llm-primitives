@@ -106,13 +106,20 @@ class Completions {
    */
   async findByPromptHash(model, prompt, userid) {
     await this.init();
-    const sql = `
+    const prompt_hash = getHash(prompt);
+    let values = [model, prompt_hash]
+    let sql = `
       SELECT id, model, prompt_hash, prompt, response, gold, label, took, cost, userid, created, updated
       FROM completions
-      WHERE model = ? AND prompt_hash = ? AND userid = ? AND isdeleted = 0;
+      WHERE model = ? AND prompt_hash = ? AND isdeleted = 0
     `;
-    const prompt_hash = getHash(prompt);
-    const rows = await allAsync(this.db, sql, [model, prompt_hash, userid]);
+
+    if(userid) {
+      sql += `AND userid = ?`;
+      values.push(userid);
+    }
+
+    const rows = await allAsync(this.db, sql, values);
     return rows.map((r)=>{
       r.prompt = JSON.parse(r.prompt);
       r.response = JSON.parse(r.response);

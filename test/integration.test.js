@@ -85,6 +85,30 @@ And includes Hello, World!`);
     assert.equal(w,true);
   });
 
+  it("Should test json", async function () {    
+    const json = {
+      "name": "boolean_value",
+      "description": "Answer true or false based on the request.",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "answer": {
+            "type": "boolean"
+          }
+        },
+        "required":["answer"],
+        "additionalProperties":false
+      }
+    }
+
+    const response = await llm.json("In Canada, the two main languages are English and Armenian.",json);
+    //response == {"answer":false}
+    const answer_str = JSON.stringify(response);
+    const expect_str = JSON.stringify({"answer":false});
+    assert.equal(answer_str,expect_str);
+  });  
+
   it("Should test cached streaming function", async function () {
     let hasReady = false;
     let hasChunk = false;

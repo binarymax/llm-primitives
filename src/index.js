@@ -221,7 +221,12 @@ const extractStructuredResponse = function(response,name) {
     if (message.content) {
       try {
         const json = JSON.parse(message.content);
-        return json[name];
+        if(name) {
+          return json[name];
+        } else {
+          return json;
+        }
+
       } catch (ex) {
         console.error(ex);
       }
@@ -408,6 +413,11 @@ class LLM {
     return extractMessage(response);
   }
 
+  // A structured json response
+  async json(content,schema,temperature) {
+    const {response} = await this._completion(content,schema,temperature);
+    return extractStructuredResponse(response);
+  }
 
   //Streaming responses are only used for things like RAG or Chat
   async stream(content,send,temperature) {
