@@ -21,8 +21,9 @@ describe("Full integration test for llm-primitives", function () {
 
   const llm = new LLM({
     apiKey:process.env.OPENAI_API_KEY,
-    model:"gpt-4o-mini",
-    prompts:join(__dirname,"prompts")
+    model:"gpt-4.1-mini",
+    prompts:join(__dirname,"prompts"),
+    userid:"Testing"
   });
 
   //
@@ -180,6 +181,16 @@ And includes Hello, World!`);
     assert.equal(hasChunk,true);
     assert.equal(hasError,false);
     assert.equal(hasDone,true);
+  });
+
+  it("Should test cost summaries", async function () {
+    const userid = "Testing"
+    const costs = await llm.costs({userid});
+    assert.equal(costs.length==1,true);
+    const bucket = costs[0];
+    assert.equal(bucket.count>0,true);
+    assert.equal(bucket.total_cost>0,true);
+    assert.equal(bucket.avg_cost>0,true);
   });
 
 });

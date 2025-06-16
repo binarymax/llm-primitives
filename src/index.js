@@ -112,12 +112,32 @@ function OpenAICost(response) {
         "gpt-4o-mini-2024-07-18": { input: 0.15, output: 0.60 },
         "gpt-4-0613": { input: 30.00, output: 60.00 },
         "gpt-4-turbo-2024-04-09": { input: 10.00, output: 30.00 },
-        "gpt-3.5-turbo": { input: 0.003, output: 0.006 }
+        "gpt-3.5-turbo": { input: 0.003, output: 0.006 },
+        "gpt-4.1": { input: 2.00, output: 8.00 },
+        "gpt-4.1-2025-04-14": { input: 2.00, output: 8.00 },
+        "gpt-4.1-mini": { input: 0.40, output: 1.60 },
+        "gpt-4.1-mini-2025-04-14": { input: 0.40, output: 1.60 },
+        "gpt-4.1-nano": { input: 0.10, output: 0.40 },
+        "gpt-4.1-nano-2025-04-14": { input: 0.10, output: 0.40 },
+        "gpt-4o-audio-preview-2024-12-17": { input: 2.50, output: 10.00 },
+        "gpt-4o-realtime-preview-2024-12-17": { input: 5.00, output: 20.00 },
+        "gpt-4o-mini-audio-preview-2024-12-17": { input: 0.15, output: 0.60 },
+        "gpt-4o-mini-realtime-preview-2024-12-17": { input: 0.60, output: 2.40 },
+        "o1-pro-2025-03-19": { input: 150.00, output: 600.00 },
+        "o3-pro-2025-06-10": { input: 20.00, output: 80.00 },
+        "o3-2025-04-16": { input: 2.00, output: 8.00 },
+        "o4-mini-2025-04-16": { input: 1.10, output: 4.40 },
+        "codex-mini-latest": { input: 1.50, output: 6.00 },
+        "gpt-4o-mini-search-preview-2025-03-11": { input: 0.15, output: 0.60 },
+        "gpt-4o-search-preview-2025-03-11": { input: 2.50, output: 10.00 },
+        "computer-use-preview-2025-03-11": { input: 3.00, output: 12.00 }
     };
+
 
     const modelVersion = response.model;
     if (!(modelVersion in pricesPerMillion)) {
-        throw new Error(`Pricing information for model '${modelVersion}' is not available.`);
+        console.error(`Pricing information for model '${modelVersion}' is not available.`);
+        return 0;
     }
 
     const inputPricePerMillion = pricesPerMillion[modelVersion].input;
@@ -504,6 +524,11 @@ class LLM {
 
     return null;
 
+  }
+
+  // Get the cost summary grouped and filtered
+  async costs(options) {
+    return await Completions.costSummary(options);
   }
 
 }

@@ -128,6 +128,64 @@ class Completions {
   }
 
   /**
+   * Returns summary metrics with optional filters and grouping.
+   * - If interval is specified ('day' or 'hour'), groups by time bucket.
+   * - Otherwise, groups by userid.
+   * 
+   * @param {Object} options
+   * @param {string} [options.userid] - Optional user identifier
+   * @param {string} [options.start] - Optional ISO start date (inclusive)
+   * @param {string} [options.end] - Optional ISO end date (exclusive)
+   * @param {'day' | 'hour'} [options.interval] - Optional grouping interval
+   * @returns {Promise<Array>} Aggregated summary records
+   */
+  async costSummary({ userid, start, end, interval } = {}) {
+    await this.init();
+
+    const params = [];
+    const filters = ['isdeleted = 0'];
+
+    // Filters
+    if (userid) {
+      filters.push('userid = ?');
+      params.push(userid);
+    }
+    if (start) {
+      filters.push('created >= ?');
+      params.push(start);
+    }
+    if (end) {
+      filters.push('created < ?');
+      params.push(end);
+    }
+
+    // Grouping
+    let groupExpr = 'userid';
+    if (interval) {
+      if (!['day', 'hour'].includes(interval)) {
+        throw new Error("Invalid interval. Must be 'day' or 'hour'");
+      }
+      groupExpr = `strftime('${interval === 'day' ? '%Y-%m-%d' : '%Y-%m-%d %H:00:00'}', created)`;
+    }
+
+    const sql = `
+      SELECT 
+        ${groupExpr} AS bucket,
+        COUNT(*) AS count,
+        SUM(cost) AS total_cost,
+        AVG(cost) AS avg_cost
+      FROM completions
+      WHERE ${filters.join(' AND ')}
+      GROUP BY bucket
+      ORDER BY bucket ASC
+    `;
+
+    return await allAsync(this.db, sql, params);
+  }
+
+
+
+  /**
    * Creates a new completion record.
    * @param {string} model - The model identifier.
    * @param {any} prompt - The prompt object (will be stringified and hashed).
