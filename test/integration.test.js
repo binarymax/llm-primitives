@@ -68,7 +68,7 @@ And includes Hello, World!`);
   });
 
   it("Should test date", async function () {    
-    const answer = await llm.date("When did Niel Armstrong walk on the moon?");
+    const answer = await llm.date("In US Eastern time, what date did Niel Armstrong walk on the moon?");
     //answer==1969-07-20T00:00:00.000Z
     const expect = new Date('1969-07-20');
     assert.equal(answer.getTime(),expect.getTime());

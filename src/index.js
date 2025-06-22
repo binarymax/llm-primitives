@@ -343,9 +343,11 @@ class LLM {
       const prompt = {
         model: self.model,
         messages: messages,
-        temperature: temperature,
-        stream: false,
+        stream: false
+      }
 
+      if(self.model.indexOf('o')!=0) {
+        prompt.temperature=temperature||0.0;
       }
 
       if(json_schema) {
@@ -452,11 +454,14 @@ class LLM {
       const prompt = {
         model: self.model,
         messages: messages,
-        temperature: temperature,
         stream: true,
         stream_options: {
           include_usage: true
         }
+      }
+
+      if(self.model.indexOf('o')!=0) {
+        prompt.temperature=temperature||0.0;
       }
 
       //Check if we have a cached response
