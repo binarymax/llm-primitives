@@ -1,4 +1,4 @@
-// completions.js
+// completions-sqlite.js
 import crypto from 'crypto';
 import sqlite3 from 'sqlite3';
 
@@ -13,7 +13,7 @@ const createTableSQL = `
     label       TEXT DEFAULT 'new',
     took        INTEGER,
     cost        NUMERIC,
-    userid      TEXT,
+    groupid     TEXT,
     created     DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated     DATETIME,
     isdeleted   BOOLEAN DEFAULT 0
@@ -50,7 +50,7 @@ const generateHash = (text) => {
 
 const getHash = (prompt) => generateHash(JSON.stringify(prompt));
 
-class Completions {
+class SQLiteCompletions {
   /**
    * @param {string} [dbPath='./database.sqlite'] - Path to the SQLite database file.
    */
@@ -77,19 +77,19 @@ class Completions {
   }
 
   /**
-   * Finds completions matching the provided prompt and userid.
+   * Finds completions matching the provided prompt and groupid.
    * @param {any} prompt - The prompt object (will be stringified).
-   * @param {string} userid - The user identifier.
+   * @param {string} groupid - The group identifier.
    * @returns {Promise<Array>} Array of matching completions.
    */
-  async findByPrompt(prompt, userid) {
+  async findByPrompt(prompt, groupid) {
     await this.init();
     const sql = `
-      SELECT id, model, prompt_hash, prompt, response, gold, label, took, cost, userid, created, updated
+      SELECT id, model, prompt_hash, prompt, response, gold, label, took, cost, groupid, created, updated
       FROM completions
-      WHERE prompt = ? AND userid = ? AND isdeleted = 0;
+      WHERE prompt = ? AND groupid = ? AND isdeleted = 0;
     `;
-    const rows = await allAsync(this.db, sql, [prompt, userid]);
+    const rows = await allAsync(this.db, sql, [prompt, groupid]);
     return rows.map((r)=>{
       r.prompt = JSON.parse(r.prompt);
       r.response = JSON.parse(r.response);
@@ -98,25 +98,25 @@ class Completions {
   }
 
   /**
-   * Finds completions matching the provided model, computed prompt hash, and userid.
+   * Finds completions matching the provided model, computed prompt hash, and groupid.
    * @param {string} model - The model identifier.
    * @param {any} prompt - The prompt object (will be stringified and hashed).
-   * @param {string} userid - The user identifier.
+   * @param {string} groupid - The group identifier.
    * @returns {Promise<Array>} Array of matching completions.
    */
-  async findByPromptHash(model, prompt, userid) {
+  async findByPromptHash(model, prompt, groupid) {
     await this.init();
     const prompt_hash = getHash(prompt);
     let values = [model, prompt_hash]
     let sql = `
-      SELECT id, model, prompt_hash, prompt, response, gold, label, took, cost, userid, created, updated
+      SELECT id, model, prompt_hash, prompt, response, gold, label, took, cost, groupid, created, updated
       FROM completions
       WHERE model = ? AND prompt_hash = ? AND isdeleted = 0
     `;
 
-    if(userid) {
-      sql += `AND userid = ?`;
-      values.push(userid);
+    if(groupid) {
+      sql += `AND groupid = ?`;
+      values.push(groupid);
     }
 
     const rows = await allAsync(this.db, sql, values);
@@ -130,25 +130,25 @@ class Completions {
   /**
    * Returns summary metrics with optional filters and grouping.
    * - If interval is specified ('day' or 'hour'), groups by time bucket.
-   * - Otherwise, groups by userid.
+   * - Otherwise, groups by groupid.
    * 
    * @param {Object} options
-   * @param {string} [options.userid] - Optional user identifier
+   * @param {string} [options.groupid] - Optional group identifier
    * @param {string} [options.start] - Optional ISO start date (inclusive)
    * @param {string} [options.end] - Optional ISO end date (exclusive)
    * @param {'day' | 'hour'} [options.interval] - Optional grouping interval
    * @returns {Promise<Array>} Aggregated summary records
    */
-  async costSummary({ userid, start, end, interval } = {}) {
+  async costSummary({ groupid, start, end, interval } = {}) {
     await this.init();
 
     const params = [];
     const filters = ['isdeleted = 0'];
 
     // Filters
-    if (userid) {
-      filters.push('userid = ?');
-      params.push(userid);
+    if (groupid) {
+      filters.push('groupid = ?');
+      params.push(groupid);
     }
     if (start) {
       filters.push('created >= ?');
@@ -160,7 +160,7 @@ class Completions {
     }
 
     // Grouping
-    let groupExpr = 'userid';
+    let groupExpr = 'groupid';
     if (interval) {
       if (!['day', 'hour'].includes(interval)) {
         throw new Error("Invalid interval. Must be 'day' or 'hour'");
@@ -192,20 +192,20 @@ class Completions {
    * @param {any} response - The response object (will be stringified if necessary).
    * @param {number} took - Execution time.
    * @param {number} cost - Associated cost.
-   * @param {string} userid - The user identifier.
+   * @param {string} groupid - The group identifier.
    * @returns {Promise<number>} The ID of the newly inserted completion.
    */
-  async create(model, prompt, response, took, cost, userid) {
+  async create(model, prompt, response, took, cost, groupid) {
     await this.init();
     const sql = `
-      INSERT INTO completions(model, prompt_hash, prompt, response, label, took, cost, userid)
+      INSERT INTO completions(model, prompt_hash, prompt, response, label, took, cost, groupid)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?);
     `;
     const prompt_hash = getHash(prompt);
-    const values = [model, prompt_hash, JSON.stringify(prompt), JSON.stringify(response), 'new', took, cost, userid];
+    const values = [model, prompt_hash, JSON.stringify(prompt), JSON.stringify(response), 'new', took, cost, groupid];
     const result = await runAsync(this.db, sql, values);
     return result.lastID;
   }
 }
 
-export default Completions;
+export default SQLiteCompletions;

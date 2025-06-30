@@ -2,8 +2,43 @@ import fs from 'fs';
 import ejs from 'ejs';
 import path from 'path';
 import OpenAI from 'openai';
-import completions from './completions.js';
-const Completions = new completions();
+import PGCompletions from './completions-pg.js';
+import SQLiteCompletions from './completions-sqlite.js';
+
+const pricesPerMillion = {
+    "o1-2024-12-17": { input: 15.00, output: 60.00 },
+    "o1-mini-2024-09-12": { input: 1.10, output: 4.40 },
+    "o3-mini-2025-01-31": { input: 1.10, output: 4.40 },
+    "gpt-4.5-preview-2025-02-27": { input: 75.00, output: 150.00 },
+    "gpt-4o": { input: 5.00, output: 15.00 },
+    "gpt-4o-2024-08-06": { input: 2.50, output: 10.00 },
+    "gpt-4o-2024-05-13": { input: 5.00, output: 15.00 },
+    "gpt-4o-mini": { input: 0.15, output: 0.60 },
+    "gpt-4o-mini-2024-07-18": { input: 0.15, output: 0.60 },
+    "gpt-4-0613": { input: 30.00, output: 60.00 },
+    "gpt-4-turbo-2024-04-09": { input: 10.00, output: 30.00 },
+    "gpt-3.5-turbo": { input: 0.003, output: 0.006 },
+    "gpt-4.1": { input: 2.00, output: 8.00 },
+    "gpt-4.1-2025-04-14": { input: 2.00, output: 8.00 },
+    "gpt-4.1-mini": { input: 0.40, output: 1.60 },
+    "gpt-4.1-mini-2025-04-14": { input: 0.40, output: 1.60 },
+    "gpt-4.1-nano": { input: 0.10, output: 0.40 },
+    "gpt-4.1-nano-2025-04-14": { input: 0.10, output: 0.40 },
+    "gpt-4o-audio-preview-2024-12-17": { input: 2.50, output: 10.00 },
+    "gpt-4o-realtime-preview-2024-12-17": { input: 5.00, output: 20.00 },
+    "gpt-4o-mini-audio-preview-2024-12-17": { input: 0.15, output: 0.60 },
+    "gpt-4o-mini-realtime-preview-2024-12-17": { input: 0.60, output: 2.40 },
+    "o1-pro-2025-03-19": { input: 150.00, output: 600.00 },
+    "o3-pro-2025-06-10": { input: 20.00, output: 80.00 },
+    "o3-2025-04-16": { input: 2.00, output: 8.00 },
+    "o4-mini-2025-04-16": { input: 1.10, output: 4.40 },
+    "codex-mini-latest": { input: 1.50, output: 6.00 },
+    "gpt-4o-mini-search-preview-2025-03-11": { input: 0.15, output: 0.60 },
+    "gpt-4o-search-preview-2025-03-11": { input: 2.50, output: 10.00 },
+    "computer-use-preview-2025-03-11": { input: 3.00, output: 12.00 }
+};
+
+const ppmkeys = Object.keys(pricesPerMillion);
 
 const enum_schema = function(options) {
   return {
@@ -99,49 +134,18 @@ const date_schema = function(date) {
 }
 
 
-function OpenAICost(response) {
-    const pricesPerMillion = {
-        "o1-2024-12-17": { input: 15.00, output: 60.00 },
-        "o1-mini-2024-09-12": { input: 1.10, output: 4.40 },
-        "o3-mini-2025-01-31": { input: 1.10, output: 4.40 },
-        "gpt-4.5-preview-2025-02-27": { input: 75.00, output: 150.00 },
-        "gpt-4o": { input: 5.00, output: 15.00 },
-        "gpt-4o-2024-08-06": { input: 2.50, output: 10.00 },
-        "gpt-4o-2024-05-13": { input: 5.00, output: 15.00 },
-        "gpt-4o-mini": { input: 0.15, output: 0.60 },
-        "gpt-4o-mini-2024-07-18": { input: 0.15, output: 0.60 },
-        "gpt-4-0613": { input: 30.00, output: 60.00 },
-        "gpt-4-turbo-2024-04-09": { input: 10.00, output: 30.00 },
-        "gpt-3.5-turbo": { input: 0.003, output: 0.006 },
-        "gpt-4.1": { input: 2.00, output: 8.00 },
-        "gpt-4.1-2025-04-14": { input: 2.00, output: 8.00 },
-        "gpt-4.1-mini": { input: 0.40, output: 1.60 },
-        "gpt-4.1-mini-2025-04-14": { input: 0.40, output: 1.60 },
-        "gpt-4.1-nano": { input: 0.10, output: 0.40 },
-        "gpt-4.1-nano-2025-04-14": { input: 0.10, output: 0.40 },
-        "gpt-4o-audio-preview-2024-12-17": { input: 2.50, output: 10.00 },
-        "gpt-4o-realtime-preview-2024-12-17": { input: 5.00, output: 20.00 },
-        "gpt-4o-mini-audio-preview-2024-12-17": { input: 0.15, output: 0.60 },
-        "gpt-4o-mini-realtime-preview-2024-12-17": { input: 0.60, output: 2.40 },
-        "o1-pro-2025-03-19": { input: 150.00, output: 600.00 },
-        "o3-pro-2025-06-10": { input: 20.00, output: 80.00 },
-        "o3-2025-04-16": { input: 2.00, output: 8.00 },
-        "o4-mini-2025-04-16": { input: 1.10, output: 4.40 },
-        "codex-mini-latest": { input: 1.50, output: 6.00 },
-        "gpt-4o-mini-search-preview-2025-03-11": { input: 0.15, output: 0.60 },
-        "gpt-4o-search-preview-2025-03-11": { input: 2.50, output: 10.00 },
-        "computer-use-preview-2025-03-11": { input: 3.00, output: 12.00 }
-    };
-
-
+function OpenAICost(response,ppm) {
     const modelVersion = response.model;
-    if (!(modelVersion in pricesPerMillion)) {
-        console.error(`Pricing information for model '${modelVersion}' is not available.`);
+    if (!ppm) { 
+      if (!(modelVersion in pricesPerMillion)) {
+        console.error(`WARNING! Pricing information for model '${modelVersion}' is not available. Provide pricing by setting {input:X, output:Y} as the ppm (prices per million) value when instantiating LLM`);
         return 0;
+      } else {
+        ppm = pricesPerMillion[modelVersion];
+      }
     }
-
-    const inputPricePerMillion = pricesPerMillion[modelVersion].input;
-    const outputPricePerMillion = pricesPerMillion[modelVersion].output;
+    const inputPricePerMillion = ppm.input;
+    const outputPricePerMillion = ppm.output;
 
     const promptTokens = response.usage.prompt_tokens;
     const completionTokens = response.usage.completion_tokens;
@@ -289,32 +293,24 @@ const template = function(filename,options) {
 
 //----------------------------------------
 
-class LLM {
+export class Prompts {
 
-  constructor(options) {
-    const apiKey = options.apiKey||process.env.OPENAI_API_KEY||null;
-    this.model = options.model||defaultModel;
-    this.system = options.system||"You are a helpful assistant.";
-    this.developer = options.developer||"You are a helpful assistant.";
-    this.userid = options.userid||"default";
-    this.openai = new OpenAI({apiKey});
-
-    // Register and Compile Prompt templates
-    this.prompts = options.prompts||null;
+  constructor(filepath) {
+    this.filepath = filepath||null;
     this.templates = {};
-    if (this.prompts) {
+    if (this.filepath) {
       const templates = {};
       try {
-        const files = fs.readdirSync(options.prompts);
+        const files = fs.readdirSync(filepath);
         files.forEach(file => {
-          const filename = path.join(options.prompts, file);
+          const filename = path.join(filepath, file);
           if (fs.statSync(filename).isFile()) {
             const name = path.basename(file, path.extname(file)); // Remove extension
             templates[name] = template(filename);
           }
         });
         this.templates = templates;
-        console.log('Templates loaded from:', this.prompts);
+        console.log('Templates loaded from:', this.filepath);
       } catch (err) {
         console.error('Error loading templates:', err);
       }
@@ -328,6 +324,39 @@ class LLM {
       console.error(ex);
     }
     return null;
+  }  
+
+}
+
+//----------------------------------------
+
+export class LLM {
+
+  constructor(options) {
+    const apiKey = options.apiKey||process.env.OPENAI_API_KEY||null;
+    this.model = options.model||defaultModel;
+    this.system = options.system||"You are a helpful assistant.";
+    this.developer = options.developer||"You are a helpful assistant.";
+    this.groupid = options.groupid||options.userid||"default";
+    this.ppm = options.ppm;
+    this.openai = new OpenAI({apiKey});
+
+    if(options.pool) {
+      this.pool = options.pool;
+      this.Completions = new PGCompletions(options.pool);
+    } else {
+      this.Completions = new SQLiteCompletions();
+    }
+
+    if(options.prompts) {
+      this.prompts = new Prompts(options.prompts);
+    }
+
+    if(ppmkeys.indexOf(this.model)<0) {
+      const mdl = this.model;
+      throw new Error(`Model ${mdl} could not be found in pricing table. Provide {input:x, output:y} as prices per million tokens in options.ppm for llm-primitives.  See more information here: https://platform.openai.com/docs/pricing`);
+    }
+
   }
 
   async _completion(content,json_schema,temperature,max_completion_tokens) {
@@ -364,7 +393,7 @@ class LLM {
       }
 
       //Check if we have a cached response
-      const cached = await Completions.findByPromptHash(self.model,prompt,self.userid);
+      const cached = await self.Completions.findByPromptHash(self.model,prompt,self.groupid);
       if(cached && cached.length && cached[0].response) {
         //Completion already generated and cached in database!
         return cached[0];
@@ -376,7 +405,7 @@ class LLM {
 
       //Cache the response
       const cost = OpenAICost(response);
-      const completionid = await Completions.create(self.model, prompt, response, took, cost, self.userid);
+      const completionid = await self.Completions.create(self.model, prompt, response, took, cost, self.groupid);
 
       return {completionid,response,took,cost}
 
@@ -465,7 +494,7 @@ class LLM {
       }
 
       //Check if we have a cached response
-      const cached = await Completions.findByPromptHash(self.model,prompt,self.userid);
+      const cached = await self.Completions.findByPromptHash(self.model,prompt,self.groupid);
       if(cached && cached.length && cached[0].response) {
         //Completion already generated and cached in database!
         send({"ready":true});
@@ -518,7 +547,7 @@ class LLM {
 
       //Cache the response
       const cost = OpenAICost(response);
-      const completionid = await Completions.create(self.model, prompt, response, took, cost, self.userid);
+      const completionid = await self.Completions.create(self.model, prompt, response, took, cost, self.groupid);
 
       return {completionid,response,output,took,cost}
 
@@ -533,9 +562,18 @@ class LLM {
 
   // Get the cost summary grouped and filtered
   async costs(options) {
-    return await Completions.costSummary(options);
+    const self = this;
+    return await self.Completions.costSummary(options,this.ppm);
+  }
+
+  //Render shortcut
+  render(name,data) {
+    const prompts=this.prompts;
+    if (prompts) return prompts.render(name,data);
+    return null;
   }
 
 }
 
-export default LLM;
+const LLMPrimitives = {LLM,Prompts}
+export default LLMPrimitives;

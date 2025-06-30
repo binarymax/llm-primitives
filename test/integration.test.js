@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 config({ path: join(__dirname, ".env") });
 
-import LLM from "../src/index.js";
+import {LLM,Prompts} from "../src/index.js";
 
 describe("Full integration test for llm-primitives", function () {
 
