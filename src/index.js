@@ -5,12 +5,12 @@ import OpenAI from 'openai';
 import PGCompletions from './completions-pg.js';
 import SQLiteCompletions from './completions-sqlite.js';
 
-const pricesPerMillion = {
+export const pricesPerMillion = {
     "o1-2024-12-17": { input: 15.00, output: 60.00 },
     "o1-mini-2024-09-12": { input: 1.10, output: 4.40 },
     "o3-mini-2025-01-31": { input: 1.10, output: 4.40 },
     "gpt-4.5-preview-2025-02-27": { input: 75.00, output: 150.00 },
-    "gpt-4o": { input: 5.00, output: 15.00 },
+    "gpt-4o": { input: 2.50, output: 10.00 },
     "gpt-4o-2024-08-06": { input: 2.50, output: 10.00 },
     "gpt-4o-2024-05-13": { input: 5.00, output: 15.00 },
     "gpt-4o-mini": { input: 0.15, output: 0.60 },
@@ -39,6 +39,19 @@ const pricesPerMillion = {
 };
 
 const ppmkeys = Object.keys(pricesPerMillion);
+
+export const Estimate = function(examples,inputTokens=5000,outputTokens=300) {
+  const costs = {};
+  for(let m of ppmkeys) {
+    costs[m] = 
+      (((inputTokens*examples)/1_000_000)*pricesPerMillion[m].input) + 
+      (((outputTokens*examples)/1_000_000)*pricesPerMillion[m].output)
+  }
+  return {
+    input:{examples,inputTokens,outputTokens},
+    costs
+  };
+}
 
 const enum_schema = function(options) {
   return {
@@ -575,5 +588,5 @@ export class LLM {
 
 }
 
-const LLMPrimitives = {LLM,Prompts}
+const LLMPrimitives = {LLM,Prompts,Estimate,pricesPerMillion}
 export default LLMPrimitives;
