@@ -28,6 +28,7 @@
   "dependencies": {
     "ejs": "^3.1.10",
     "openai": "^4.87.3",
+    "pg": "^8.16.3",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
