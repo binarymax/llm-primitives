@@ -136,7 +136,17 @@ function OpenAICost(response) {
         "computer-use-preview-2025-03-11": { input: 3.00, output: 12.00 }
     };
 
-    const modelVersion = response.model;
+    let modelVersion = response.model;
+
+    if (!(modelVersion in pricesPerMillion)) {
+        modelVersion="";
+        Object.keys(pricesPerMillion).forEach(m=>{
+          if(response.model.indexOf(m) && m.length>modelVersion.length) {
+            modelVersion = m;
+          }
+        })
+    }
+
     if (!(modelVersion in pricesPerMillion)) {
         console.error(`Pricing information for model '${modelVersion}' is not available.`);
         return 0;
@@ -301,6 +311,8 @@ class LLM {
     this.userid = options.userid||"default";
     this.openai = new OpenAI({apiKey});
 
+    if (this.model.indexOf('gpt-5')>-1) this.temperature = 1;
+
     // Register and Compile Prompt templates
     this.prompts = options.prompts||null;
     this.templates = {};
@@ -335,7 +347,7 @@ class LLM {
   async _completion(content,json_schema,temperature,max_completion_tokens) {
 
     const self = this;
-    temperature = temperature||0.0;
+    temperature = self.temperature||temperature||0.0;
     try {
 
       let messages = [];
@@ -446,7 +458,7 @@ class LLM {
   //Streaming responses are only used for things like RAG or Chat
   async stream(content,send,temperature) {
     const self = this;
-    temperature = temperature||0.0;
+    temperature = self.temperature||temperature||0.0;
     try {
 
       let messages = [];
