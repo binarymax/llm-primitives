@@ -123,6 +123,9 @@ function OpenAICost(response) {
         "gpt-4o-realtime-preview-2024-12-17": { input: 5.00, output: 20.00 },
         "gpt-4o-mini-audio-preview-2024-12-17": { input: 0.15, output: 0.60 },
         "gpt-4o-mini-realtime-preview-2024-12-17": { input: 0.60, output: 2.40 },
+        "gpt-5": { input:1.25, output: 10.00},
+        "gpt-5-mini":{ input:0.25,output:2.00},
+        "gpt-5-nano":{ input:0.05,output:0.40},
         "o1-pro-2025-03-19": { input: 150.00, output: 600.00 },
         "o3-pro-2025-06-10": { input: 20.00, output: 80.00 },
         "o3-2025-04-16": { input: 2.00, output: 8.00 },
@@ -132,7 +135,6 @@ function OpenAICost(response) {
         "gpt-4o-search-preview-2025-03-11": { input: 2.50, output: 10.00 },
         "computer-use-preview-2025-03-11": { input: 3.00, output: 12.00 }
     };
-
 
     const modelVersion = response.model;
     if (!(modelVersion in pricesPerMillion)) {
