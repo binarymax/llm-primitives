@@ -21,7 +21,14 @@ describe("Full integration test for llm-primitives", function () {
 
   const llm = new LLM({
     apiKey:process.env.OPENAI_API_KEY,
-    model:"gpt-4.1-mini",
+    model:"gpt-5-mini",
+    prompts:join(__dirname,"prompts"),
+    userid:"Testing"
+  });
+
+  const llm_stream = new LLM({
+    apiKey:process.env.OPENAI_API_KEY,
+    model:"gpt-4.1-nano",
     prompts:join(__dirname,"prompts"),
     userid:"Testing"
   });
@@ -121,7 +128,7 @@ And includes Hello, World!`);
       if(message.error) hasError = true;
       if(message.done) hasDone = true;
     }
-    const completed = await llm.stream("How much wood could a woodchuck chuck if a woodchuck could chuck wood?",send);
+    const completed = await llm_stream.stream("How much wood could a woodchuck chuck if a woodchuck could chuck wood?",send);
     assert.equal(hasReady,true);
     assert.equal(hasChunk,true);
     assert.equal(hasError,false);
@@ -154,7 +161,7 @@ And includes Hello, World!`);
   });
 
   it("Should test cached string", async function () {    
-    const answer = await llm.string("In markdown, write a bulleted list of the four bending elements from Avatar: The Last Airbender.");
+    const answer = await llm_stream.string("In markdown, write a bulleted list of the four bending elements from Avatar: The Last Airbender.");
     const e = answer.toLowerCase().indexOf('earth')>0;
     const f = answer.toLowerCase().indexOf('fire')>0;
     const a = answer.toLowerCase().indexOf('air')>0;
@@ -176,7 +183,7 @@ And includes Hello, World!`);
       if(message.error) hasError = true;
       if(message.done) hasDone = true;
     }
-    const completed = await llm.stream("How much wood could a woodchuck chuck if a woodchuck could chuck wood?",send);
+    const completed = await llm_stream.stream("How much wood could a woodchuck chuck if a woodchuck could chuck wood?",send);
     assert.equal(hasReady,true);
     assert.equal(hasChunk,true);
     assert.equal(hasError,false);

@@ -24,6 +24,9 @@ export const pricesPerMillion = {
     "gpt-4.1-mini-2025-04-14": { input: 0.40, output: 1.60 },
     "gpt-4.1-nano": { input: 0.10, output: 0.40 },
     "gpt-4.1-nano-2025-04-14": { input: 0.10, output: 0.40 },
+    "gpt-5": { input:1.25, output: 10.00},
+    "gpt-5-mini":{ input:0.25,output:2.00},
+    "gpt-5-nano":{ input:0.05,output:0.40},    
     "gpt-4o-audio-preview-2024-12-17": { input: 2.50, output: 10.00 },
     "gpt-4o-realtime-preview-2024-12-17": { input: 5.00, output: 20.00 },
     "gpt-4o-mini-audio-preview-2024-12-17": { input: 0.15, output: 0.60 },
@@ -148,8 +151,16 @@ const date_schema = function(date) {
 
 
 function OpenAICost(response,ppm) {
-    const modelVersion = response.model;
+    let modelVersion = response.model;
     if (!ppm) { 
+      if (!(modelVersion in pricesPerMillion)) {
+          modelVersion="";
+          Object.keys(pricesPerMillion).forEach(m=>{
+            if(response.model.indexOf(m) && m.length>modelVersion.length) {
+              modelVersion = m;
+            }
+          })
+      }
       if (!(modelVersion in pricesPerMillion)) {
         console.error(`WARNING! Pricing information for model '${modelVersion}' is not available. Provide pricing by setting {input:X, output:Y} as the ppm (prices per million) value when instantiating LLM`);
         return 0;
@@ -354,6 +365,10 @@ export class LLM {
     this.ppm = options.ppm;
     this.openai = new OpenAI({apiKey});
 
+    if(this.model.indexOf('gpt-5')>-1) {
+      this.temperature=1;
+    }
+
     if(options.pool) {
       this.pool = options.pool;
       this.Completions = new PGCompletions(options.pool);
@@ -375,7 +390,7 @@ export class LLM {
   async _completion(content,json_schema,temperature,max_completion_tokens) {
 
     const self = this;
-    temperature = temperature||0.0;
+    temperature = self.temperature||temperature||0.0;
     try {
 
       let messages = [];
@@ -486,7 +501,7 @@ export class LLM {
   //Streaming responses are only used for things like RAG or Chat
   async stream(content,send,temperature) {
     const self = this;
-    temperature = temperature||0.0;
+    temperature = self.temperature||temperature||0.0;
     try {
 
       let messages = [];
